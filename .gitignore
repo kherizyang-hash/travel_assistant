@@ -1,0 +1,18 @@
+# Python 虚拟环境
+.venv/
+venv/
+env/
+
+# 敏感信息
+.env
+
+# 输出文件（你测试生成的笔记）
+output/
+
+# IDE 配置
+.vscode/
+.idea/
+
+# Python 缓存
+__pycache__/
+*.pyc
