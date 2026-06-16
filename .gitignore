@@ -1,18 +1,24 @@
-# Python 虚拟环境
+# Python
 .venv/
 venv/
 env/
+__pycache__/
+*.pyc
 
 # 敏感信息
 .env
 
-# 输出文件（你测试生成的笔记）
+# 输出文件
 output/
 
-# IDE 配置
+# IDE
 .vscode/
 .idea/
 
-# Python 缓存
-__pycache__/
-*.pyc
+# 前端依赖（重要！）
+**/node_modules/
+**/node_modules/**/*
+
+# 前端构建产物
+**/dist/
+**/build/
