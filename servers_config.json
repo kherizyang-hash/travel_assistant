@@ -11,8 +11,16 @@
       "transport": "stdio"
     },
     "amap-maps": {
-      "transport": "http",
-      "url": "https://mcp.api-inference.modelscope.net/082c479d8a894a/mcp"
+      "transport": "streamable_http",
+      "url": "https://mcp.api-inference.modelscope.net/82b0d987abf54e/mcp"
+    },
+    "12306-mcp": {
+      "transport": "streamable_http",
+      "url": "https://mcp.api-inference.modelscope.net/054c606eee124b/mcp"
+    },
+    "variflight-mcp": {
+      "transport": "streamable_http",
+      "url": "https://mcp.api-inference.modelscope.net/6503137118fc42/mcp"
     }
   }
 }

@@ -2,9 +2,14 @@ mcp
 httpx
 python-dotenv
 langgraph
+langgraph-checkpoint-sqlite
+aiosqlite
 langchain-community
 dashscope
 langchain-mcp-adapters
 langchain-core
 fastapi
 uvicorn
+python-jose[cryptography]
+passlib[bcrypt]
+email-validator

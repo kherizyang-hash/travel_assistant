@@ -11,6 +11,13 @@ __pycache__/
 # 输出文件
 output/
 
+# 用户偏好与对话 checkpoint 数据库（含 SQLite WAL 临时文件）
+preferences.db
+preferences.db-*
+checkpoints.db
+checkpoints.db-*
+data/
+
 # IDE
 .vscode/
 .idea/

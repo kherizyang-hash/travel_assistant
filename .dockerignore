@@ -1,0 +1,13 @@
+.venv
+venv
+__pycache__
+*.pyc
+.env
+.git
+data
+output
+preferences.db
+checkpoints.db
+**/node_modules
+front/mcp_agent/dist
+.cursor

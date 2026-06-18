@@ -1,12 +1,15 @@
 import os
 import json
 import logging
-from typing import Dict, Any
+from typing import Dict, Any, List
 from contextlib import asynccontextmanager
+from datetime import datetime
+from pathlib import Path
 import traceback
 
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import FileResponse
 from pydantic import BaseModel
 
 from dotenv import load_dotenv
@@ -136,6 +139,52 @@ async def chat_endpoint(request: ChatRequest):
         logging.error(f"处理出错: {traceback.format_exc()}")
         # 返回错误信息给前端
         return ChatResponse(content="", status="error", error=str(e))
+
+OUTPUT_DIR = Path("./output")
+
+
+def _ensure_output_dir() -> Path:
+    """确保 output 目录存在。"""
+    OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
+    return OUTPUT_DIR
+
+
+class FileInfo(BaseModel):
+    name: str
+    size: int
+    modified_at: str
+
+
+@app.get("/files", response_model=List[FileInfo])
+async def list_files():
+    """列出 output 目录下所有文件。"""
+    output_dir = _ensure_output_dir()
+    files: List[FileInfo] = []
+    for entry in output_dir.iterdir():
+        if entry.is_file():
+            stat = entry.stat()
+            files.append(
+                FileInfo(
+                    name=entry.name,
+                    size=stat.st_size,
+                    modified_at=datetime.fromtimestamp(stat.st_mtime).isoformat(),
+                )
+            )
+    files.sort(key=lambda f: f.modified_at, reverse=True)
+    return files
+
+
+@app.get("/files/{filename}")
+async def get_file(filename: str):
+    """下载或预览指定文件（防止路径穿越）。"""
+    output_dir = _ensure_output_dir()
+    safe_name = Path(filename).name
+    if safe_name != filename or ".." in filename:
+        raise HTTPException(status_code=400, detail="非法文件名")
+    filepath = output_dir / safe_name
+    if not filepath.is_file():
+        raise HTTPException(status_code=404, detail="文件不存在")
+    return FileResponse(filepath, filename=safe_name)
 
 if __name__ == "__main__":
     import uvicorn

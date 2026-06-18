@@ -1,0 +1,13 @@
+services:
+  travel-assistant:
+    build: .
+    ports:
+      - "8080:80"
+    volumes:
+      - ./data:/app/data
+    env_file:
+      - .env
+    environment:
+      DATA_DIR: /app/data
+      ENV: production
+    restart: unless-stopped
