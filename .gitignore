@@ -29,3 +29,6 @@ data/
 # 前端构建产物
 **/dist/
 **/build/
+
+# 本地部署文档（不纳入版本库）
+deploy/sealos.md

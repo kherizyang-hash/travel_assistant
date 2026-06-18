@@ -3,9 +3,7 @@ import ChatBox from './components/ChatBox.vue'
 </script>
 
 <template>
-  <main>
-    <ChatBox />
-  </main>
+  <ChatBox />
 </template>
 
 <style>
@@ -21,9 +19,9 @@ body {
 #app {
   display: flex;
   justify-content: center;
-  align-items: center;
+  align-items: stretch;
   min-height: 100vh;
-  width: 100vw;
+  width: 100%;
   /* 浅色科技风背景：淡蓝灰渐变 */
   background: radial-gradient(circle at 50% 0%, #f1f5f9 0%, #e2e8f0 100%);
 }

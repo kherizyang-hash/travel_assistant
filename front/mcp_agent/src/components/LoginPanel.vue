@@ -42,7 +42,7 @@ const toggleMode = () => {
 </script>
 
 <template>
-  <div class="login-wrapper">
+  <div class="login-page">
     <div class="login-card">
       <h2>差旅出行助手</h2>
       <p class="login-sub">{{ mode === 'login' ? '登录后开始规划行程' : '注册新账号' }}</p>
@@ -75,19 +75,23 @@ const toggleMode = () => {
 </template>
 
 <style scoped>
-.login-wrapper {
-  width: 100%;
-  max-width: 520px;
-  margin: 0 auto;
-  padding: 2rem 1.5rem;
+.login-page {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 100vw;
+  min-height: 100vh;
+  padding: 2rem;
+  box-sizing: border-box;
 }
 
 .login-card {
+  width: min(640px, 92vw);
   background: rgba(255, 255, 255, 0.92);
   backdrop-filter: blur(12px);
   border: 1px solid rgba(148, 163, 184, 0.3);
   border-radius: 16px;
-  padding: 2.25rem 2.5rem;
+  padding: 2.5rem 3rem;
   box-shadow: 0 8px 32px rgba(15, 23, 42, 0.08);
 }
 
