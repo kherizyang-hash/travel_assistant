@@ -134,6 +134,12 @@ const createNewConversation = async () => {
 
 const selectConversation = async (threadId) => {
   if (isLoading.value) return
+  if (
+    threadId === currentThreadId.value &&
+    messages.value.some((m) => m.thinking?.lines?.length)
+  ) {
+    return
+  }
   currentThreadId.value = threadId
   try {
     const data = await apiJson(`/travel/conversations/${threadId}/messages`)

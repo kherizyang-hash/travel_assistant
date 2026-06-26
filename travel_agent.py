@@ -639,28 +639,54 @@ async def cleanup() -> None:
         checkpointer = None
 
 
+def _extract_message_text(content: Any) -> str:
+    """从 LangChain 消息 content 字段提取纯文本。"""
+    if isinstance(content, str):
+        return content
+    if isinstance(content, list):
+        parts = []
+        for item in content:
+            if isinstance(item, str):
+                parts.append(item)
+            elif isinstance(item, dict) and item.get("text"):
+                parts.append(item["text"])
+        return "".join(parts)
+    return str(content) if content is not None else ""
+
+
 def extract_ui_messages(state: Any) -> List[Dict[str, str]]:
-    """从 checkpoint state 提取可展示的 user/ai 消息。"""
+    """从 checkpoint state 提取可展示的 user/ai 消息。
+
+    ReAct 轮次内可能有多条带 tool_calls 的中间 AIMessage；仅保留每轮
+    最后一条无 tool_calls 的 AI 回复，避免历史重载时出现多条推理气泡。
+    """
     if not state or not getattr(state, "values", None):
         return []
     result: List[Dict[str, str]] = []
+    pending_ai: Optional[Dict[str, str]] = None
+
+    def flush_ai() -> None:
+        nonlocal pending_ai
+        if pending_ai:
+            result.append(pending_ai)
+            pending_ai = None
+
     for msg in state.values.get("messages", []):
         if isinstance(msg, HumanMessage):
-            content = msg.content if isinstance(msg.content, str) else str(msg.content)
-            if content.strip():
-                result.append({"role": "user", "content": content})
+            text = _extract_message_text(msg.content).strip()
+            if text == CONTINUE_PROMPT:
+                continue
+            flush_ai()
+            if text:
+                result.append({"role": "user", "content": text})
         elif isinstance(msg, AIMessage):
-            content = msg.content if isinstance(msg.content, str) else ""
-            if isinstance(msg.content, list):
-                parts = []
-                for item in msg.content:
-                    if isinstance(item, str):
-                        parts.append(item)
-                    elif isinstance(item, dict) and item.get("text"):
-                        parts.append(item["text"])
-                content = "".join(parts)
-            if content and content.strip():
-                result.append({"role": "ai", "content": content})
+            if getattr(msg, "tool_calls", None):
+                continue
+            text = _extract_message_text(msg.content).strip()
+            if text:
+                pending_ai = {"role": "ai", "content": text}
+
+    flush_ai()
     return result
 
 
