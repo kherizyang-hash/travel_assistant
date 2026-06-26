@@ -12,15 +12,15 @@
     },
     "amap-maps": {
       "transport": "streamable_http",
-      "url": "https://mcp.api-inference.modelscope.net/82b0d987abf54e/mcp"
+      "url": "https://mcp.api-inference.modelscope.net/<your-amap-deployment-id>/mcp"
     },
     "12306-mcp": {
       "transport": "streamable_http",
-      "url": "https://mcp.api-inference.modelscope.net/fec189c038ca47/mcp"
+      "url": "https://mcp.api-inference.modelscope.net/<your-12306-deployment-id>/mcp"
     },
     "variflight-mcp": {
       "transport": "streamable_http",
-      "url": "https://mcp.api-inference.modelscope.net/6503137118fc42/mcp"
+      "url": "https://mcp.api-inference.modelscope.net/<your-variflight-deployment-id>/mcp"
     }
   }
 }
