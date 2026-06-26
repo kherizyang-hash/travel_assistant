@@ -66,8 +66,7 @@ cp .env.example .env
 cp servers_config.example.json servers_config.json
 ```
 
-在 `servers_config.json` 中填入你在魔搭平台上部署后获得的 MCP URL。**请勿将真实 URL 提交到公开仓库**（该文件已加入 `.gitignore`）。
-
+在 `servers_config.json` 中填入你在魔搭平台上部署后获得的 MCP URL
 本地 MCP（`weather`、`write`）无需额外配置，随 Python 进程以 stdio 方式启动。
 
 ## 本地开发
@@ -146,10 +145,6 @@ travel_assistant/
 ```
 
 ## 部署说明
-
-README 中的 Docker 部分足以让任何人**在本地复现**完整环境。
-
-若需部署到 Sealos 等云平台，建议将实例名、域名、卷挂载等**运维细节**写在本地 `deploy/sealos.md`（已 gitignore，不进入公开仓库），避免暴露个人基础设施信息。
 
 生产环境请务必设置 `JWT_SECRET`，并将 `DATA_DIR` 指向持久化卷（Docker 默认为 `/app/data`）。
 
