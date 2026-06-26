@@ -16,7 +16,7 @@
     },
     "12306-mcp": {
       "transport": "streamable_http",
-      "url": "https://mcp.api-inference.modelscope.net/054c606eee124b/mcp"
+      "url": "https://mcp.api-inference.modelscope.net/fec189c038ca47/mcp"
     },
     "variflight-mcp": {
       "transport": "streamable_http",

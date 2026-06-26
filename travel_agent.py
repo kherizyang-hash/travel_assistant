@@ -36,6 +36,7 @@ import traceback
 from datetime import datetime
 from pathlib import Path
 from typing import Any, AsyncIterator, Dict, List, Optional
+from urllib.parse import quote
 
 from dotenv import load_dotenv
 from langchain_core.messages import AIMessage, HumanMessage, SystemMessage
@@ -84,6 +85,14 @@ TOOL_STATUS_LABELS: Dict[str, str] = {
     "maps_direction_driving": "正在规划路线…",
     "maps_text_search": "正在搜索地点…",
     "maps_search_detail": "正在查询地点详情…",
+    "get-current-date": "正在获取日期…",
+    "get-stations-code-in-city": "正在查询车站…",
+    "get-station-code-of-citys": "正在查询车站…",
+    "get-station-code-by-names": "正在查询车站…",
+    "get-station-by-telecode": "正在查询车站…",
+    "get-tickets": "正在查询车次…",
+    "get-interline-tickets": "正在查询中转车次…",
+    "get-train-route-stations": "正在查询经停站…",
 }
 
 HOTEL_BRANDS = (
@@ -312,7 +321,11 @@ def _write_travel_plan(content: str) -> str:
     try:
         filepath.write_text(content, encoding="utf-8")
         _sync_preferences_from_plan(content)
-        return f"✅ 行程单已保存：{filepath}"
+        return (
+            f"✅ 行程单已保存：{filename}\n"
+            "请向用户确认保存成功，并提示通过页面左下角「历史文件」查看/下载。\n"
+            "禁止承诺发送微信/邮件、导出 PDF/Excel、生成可视化地图等未实现能力。"
+        )
     except OSError as e:
         return f"⚠️ 保存失败：{e}"
 
@@ -347,6 +360,7 @@ def create_local_tools() -> list:
             "将行程规划保存为 Markdown 文件。"
             "当用户说保存/确认保存/直接生成行程单，且对话中已有可保存的行程内容时立即调用。"
             "参数 content 为完整的 Markdown 格式行程单。"
+            "保存成功后勿向用户推销未实现功能（如发微信、PDF、可视化地图）。"
         ),
     )
     return [save_tool, delete_tool, write_tool]
@@ -381,6 +395,16 @@ def resolve_safe_filepath(filename: str, user_id: str) -> Path:
     return filepath
 
 
+def _attachment_disposition(filename: str) -> str:
+    """生成支持中文文件名的 Content-Disposition（HTTP 头仅允许 latin-1）。"""
+    try:
+        filename.encode("latin-1")
+        return f'attachment; filename="{filename}"'
+    except UnicodeEncodeError:
+        encoded = quote(filename, safe="")
+        return f'attachment; filename="download"; filename*=UTF-8\'\'{encoded}'
+
+
 def is_interim_response(content: str) -> bool:
     """判断回复是否为「请稍候」类中间状态。"""
     if not content:
@@ -392,13 +416,20 @@ def _tool_status_message(tool_name: str) -> str:
     """将工具名转为用户可读的进度文案。"""
     if tool_name in TOOL_STATUS_LABELS:
         return TOOL_STATUS_LABELS[tool_name]
-    if "12306" in tool_name or "train" in tool_name.lower():
-        return "正在查询高铁…"
-    if "flight" in tool_name.lower() or "variflight" in tool_name.lower():
+    name = tool_name.lower()
+    if any(k in name for k in ("ticket", "12306", "interline")):
+        return "正在查询车次…"
+    if any(k in name for k in ("station", "train")):
+        return "正在查询车站…"
+    if "flight" in name or "variflight" in name:
         return "正在查询航班…"
     if tool_name.startswith("maps_"):
         return "正在查询地图…"
-    return f"正在调用 {tool_name}…"
+    if "weather" in name:
+        return "正在查询天气…"
+    if "date" in name:
+        return "正在获取日期…"
+    return "正在处理查询…"
 
 
 def _tool_done_message(tool_name: str) -> str:
@@ -933,15 +964,18 @@ def run_api(host: str = "0.0.0.0", port: int = 8001) -> None:
         if download:
             return FileResponse(
                 filepath,
-                filename=filepath.name,
                 media_type="application/octet-stream",
-                headers={"Content-Disposition": f'attachment; filename="{filepath.name}"'},
+                headers={"Content-Disposition": _attachment_disposition(filepath.name)},
             )
 
         try:
             content = filepath.read_text(encoding="utf-8")
         except UnicodeDecodeError:
-            return FileResponse(filepath, filename=filepath.name)
+            return FileResponse(
+                filepath,
+                media_type="application/octet-stream",
+                headers={"Content-Disposition": _attachment_disposition(filepath.name)},
+            )
         return FileContent(name=filepath.name, content=content)
 
     @app.delete("/files/{filename}")

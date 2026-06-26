@@ -9,7 +9,7 @@ from typing import Optional
 from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from jose import JWTError, jwt
-from passlib.context import CryptContext
+import bcrypt
 from pydantic import BaseModel, EmailStr, Field
 
 from app_paths import PREFERENCES_DB
@@ -20,7 +20,6 @@ DB_TIMEOUT = 10.0
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_DAYS = 7
 
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 security = HTTPBearer(auto_error=False)
 
 
@@ -53,7 +52,10 @@ def _get_jwt_secret() -> str:
     if secret:
         return secret
     if os.getenv("ENV") == "production":
-        raise RuntimeError("JWT_SECRET 未配置")
+        raise HTTPException(
+            status_code=503,
+            detail="服务未配置 JWT_SECRET，请在环境变量中设置",
+        )
     logger.warning("JWT_SECRET 未配置，使用开发默认值（生产环境务必设置）")
     return "dev-insecure-change-me"
 
@@ -80,11 +82,11 @@ def init_auth_schema() -> None:
 
 
 def hash_password(password: str) -> str:
-    return pwd_context.hash(password)
+    return bcrypt.hashpw(password.encode("utf-8"), bcrypt.gensalt()).decode("utf-8")
 
 
 def verify_password(plain: str, hashed: str) -> bool:
-    return pwd_context.verify(plain, hashed)
+    return bcrypt.checkpw(plain.encode("utf-8"), hashed.encode("utf-8"))
 
 
 def create_access_token(user_id: str, email: str) -> str:

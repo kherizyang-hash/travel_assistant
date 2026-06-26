@@ -8,6 +8,6 @@ data
 output
 preferences.db
 checkpoints.db
-**/node_modules
+front/mcp_agent/node_modules
 front/mcp_agent/dist
 .cursor

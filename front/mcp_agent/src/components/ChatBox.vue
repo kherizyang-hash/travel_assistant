@@ -15,6 +15,16 @@ const md = new MarkdownIt({
   linkify: true,
   breaks: true,
 })
+md.validateLink = (url) => /^https?:\/\//i.test(url)
+
+const defaultLinkOpen =
+  md.renderer.rules.link_open ||
+  ((tokens, idx, options, env, self) => self.renderToken(tokens, idx, options))
+md.renderer.rules.link_open = (tokens, idx, options, env, self) => {
+  tokens[idx].attrSet('target', '_blank')
+  tokens[idx].attrSet('rel', 'noopener noreferrer')
+  return defaultLinkOpen(tokens, idx, options, env, self)
+}
 
 const WELCOME = {
   role: 'ai',
@@ -234,9 +244,10 @@ const scrollToBottom = async () => {
   }
 }
 
-const appendThinkingLine = (aiMessage, line) => {
-  if (!line || aiMessage.thinking.lines.includes(line)) return
-  aiMessage.thinking.lines.push(line)
+const appendThinkingLine = (index, line) => {
+  const msg = messages.value[index]
+  if (!line || !msg?.thinking || msg.thinking.lines.includes(line)) return
+  msg.thinking.lines = [...msg.thinking.lines, line]
 }
 
 const toggleThinking = (msg) => {
@@ -254,7 +265,8 @@ const sendMessage = async () => {
   isLoading.value = true
   await scrollToBottom()
 
-  const aiMessage = {
+  const aiMessageIndex = messages.value.length
+  messages.value.push({
     role: 'ai',
     content: '',
     thinking: {
@@ -262,8 +274,7 @@ const sendMessage = async () => {
       collapsed: false,
       done: false,
     },
-  }
-  messages.value.push(aiMessage)
+  })
 
   try {
     const response = await apiFetch('/travel/chat/stream', {
@@ -297,35 +308,36 @@ const sendMessage = async () => {
         }
 
         if (payload.type === 'status' || payload.type === 'tool_start' || payload.type === 'tool_end') {
-          appendThinkingLine(aiMessage, payload.message)
+          appendThinkingLine(aiMessageIndex, payload.message)
           await scrollToBottom()
         } else if (payload.type === 'done') {
-          aiMessage.thinking.done = true
-          aiMessage.thinking.collapsed = true
-          aiMessage.content = payload.content || '(未获取到回复，请重试)'
+          const msg = messages.value[aiMessageIndex]
+          msg.thinking = { ...msg.thinking, done: true, collapsed: true }
+          msg.content = payload.content || '(未获取到回复，请重试)'
           await scrollToBottom()
         } else if (payload.type === 'error') {
-          aiMessage.thinking.done = true
-          aiMessage.thinking.collapsed = true
-          aiMessage.content = `[系统错误: ${payload.error || '未知错误'}]`
+          const msg = messages.value[aiMessageIndex]
+          msg.thinking = { ...msg.thinking, done: true, collapsed: true }
+          msg.content = `[系统错误: ${payload.error || '未知错误'}]`
         }
       }
     }
 
-    if (!aiMessage.thinking.done) {
-      aiMessage.thinking.done = true
-      aiMessage.thinking.collapsed = true
-      if (!aiMessage.content) {
-        aiMessage.content = '(未获取到回复，请重试)'
+    const msg = messages.value[aiMessageIndex]
+    if (!msg.thinking.done) {
+      msg.thinking = { ...msg.thinking, done: true, collapsed: true }
+      if (!msg.content) {
+        msg.content = '(未获取到回复，请重试)'
       }
     }
     await loadConversations()
   } catch (e) {
-    aiMessage.thinking.done = true
-    aiMessage.thinking.collapsed = true
-    aiMessage.content = `[网络请求出错: ${e.message}]`
+    const msg = messages.value[aiMessageIndex]
+    msg.thinking = { ...msg.thinking, done: true, collapsed: true }
+    msg.content = `[网络请求出错: ${e.message}]`
   } finally {
     isLoading.value = false
+    window.getSelection()?.removeAllRanges()
     scrollToBottom()
   }
 }
